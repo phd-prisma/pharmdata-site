@@ -1,0 +1,21 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 22 && nvm use 22
+        - npm ci
+    build:
+      commands:
+        # Variáveis só do servidor precisam ir para o .env.production,
+        # senão não ficam disponíveis no runtime SSR do Amplify
+        - env | grep -E '^(RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL)=' >> .env.production || true
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
