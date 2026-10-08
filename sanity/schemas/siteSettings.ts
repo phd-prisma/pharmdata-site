@@ -1,0 +1,111 @@
+import { defineField, defineType } from "sanity";
+
+export const siteSettings = defineType({
+  name: "siteSettings",
+  title: "Configurações do Site",
+  type: "document",
+  groups: [
+    { name: "seo", title: "SEO", default: true },
+    { name: "header", title: "Cabeçalho" },
+    { name: "contact", title: "Contato" },
+    { name: "footer", title: "Rodapé" },
+  ],
+  fields: [
+    defineField({
+      name: "siteTitle",
+      title: "Título do Site",
+      description: "Aparece na aba do navegador e nos resultados de busca",
+      type: "string",
+      group: "seo",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: "description",
+      title: "Descrição",
+      type: "text",
+      rows: 3,
+      group: "seo",
+    }),
+    defineField({
+      name: "ogImage",
+      title: "Imagem de compartilhamento",
+      description:
+        "Aparece ao compartilhar o link no LinkedIn, WhatsApp etc. Tamanho ideal: 1200×630. Sem imagem, é usada uma arte padrão com o nome da marca.",
+      type: "image",
+      group: "seo",
+    }),
+    defineField({
+      name: "brandName",
+      title: "Nome da marca",
+      description: "Logo em texto do cabeçalho e do rodapé",
+      type: "string",
+      group: "header",
+    }),
+    defineField({
+      name: "navigation",
+      title: "Menu",
+      type: "array",
+      of: [{ type: "link" }],
+      group: "header",
+    }),
+    defineField({
+      name: "headerCta",
+      title: "Botão do cabeçalho",
+      type: "link",
+      group: "header",
+    }),
+    defineField({
+      name: "contactEmail",
+      title: "E-mail de Contato",
+      type: "string",
+      group: "contact",
+    }),
+    defineField({
+      name: "linkedinUrl",
+      title: "URL do LinkedIn",
+      type: "url",
+      group: "contact",
+    }),
+    defineField({
+      name: "footerTagline",
+      title: "Frase do rodapé",
+      type: "string",
+      group: "footer",
+    }),
+    defineField({
+      name: "privacyPolicyFile",
+      title: "Política de Privacidade (PDF)",
+      description: "Tem prioridade sobre a URL abaixo",
+      type: "file",
+      options: { accept: "application/pdf" },
+      group: "footer",
+    }),
+    defineField({
+      name: "privacyPolicyUrl",
+      title: "URL da Política de Privacidade",
+      description: "Usada se nenhum PDF for enviado acima",
+      type: "url",
+      validation: (Rule) => Rule.uri({ allowRelative: true }),
+      group: "footer",
+    }),
+    defineField({
+      name: "termsFile",
+      title: "Termos de Uso (PDF)",
+      description: "Tem prioridade sobre a URL abaixo",
+      type: "file",
+      options: { accept: "application/pdf" },
+      group: "footer",
+    }),
+    defineField({
+      name: "termsUrl",
+      title: "URL dos Termos de Uso",
+      description: "Usada se nenhum PDF for enviado acima",
+      type: "url",
+      validation: (Rule) => Rule.uri({ allowRelative: true }),
+      group: "footer",
+    }),
+  ],
+  preview: {
+    prepare: () => ({ title: "Configurações do Site" }),
+  },
+});
