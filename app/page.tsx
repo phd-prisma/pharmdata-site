@@ -12,8 +12,9 @@ import { Clients } from "@/components/sections/Clients";
 import { Contact } from "@/components/sections/Contact";
 import { getHomeContent } from "@/lib/sanity/getHomeContent";
 
-// Conteúdo publicado no Sanity aparece no site em até 60 segundos
-export const revalidate = 60;
+// Renderiza a cada visita: o Amplify não persiste a revalidação (ISR) do Next 16,
+// então o conteúdo publicado no Sanity aparece em segundos, sem novo deploy
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings } = await getHomeContent();

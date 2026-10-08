@@ -24,16 +24,16 @@ const sourceSerif4 = Source_Serif_4({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://pharmdata.com.br",
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://pharmdata.com.br",
   ),
   title: "Pharmdata — Infraestrutura de dados regulatórios de medicamentos",
   description:
     "Especialistas em informação de medicamentos no Brasil, entregando dados estruturados e interoperáveis com curadoria contínua.",
 };
 
-const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID?.trim();
 const umamiScriptUrl =
-  process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL ?? "https://cloud.umami.is/script.js";
+  process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL?.trim() || "https://cloud.umami.is/script.js";
 
 export const viewport: Viewport = {
   themeColor: "#002a2d",

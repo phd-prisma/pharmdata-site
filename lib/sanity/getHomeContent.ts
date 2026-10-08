@@ -57,7 +57,12 @@ type HomeContentQueryResult = Partial<Omit<HomeContent, "settings">> & {
 async function fetchHomeContent(): Promise<HomeContentQueryResult | null> {
   if (!sanityClient) return null;
   try {
-    return await sanityClient.fetch<HomeContentQueryResult>(HOME_CONTENT_QUERY);
+    // Sem cache de dados do Next: a página já é dinâmica e precisa do conteúdo atual
+    return await sanityClient.fetch<HomeContentQueryResult>(
+      HOME_CONTENT_QUERY,
+      {},
+      { cache: "no-store" },
+    );
   } catch (error) {
     console.error("Falha ao buscar conteúdo no Sanity:", error);
     return null;
