@@ -1,6 +1,7 @@
+import { headers } from "next/headers";
 import { cache } from "react";
 import { defaultContent } from "@/lib/content/defaults";
-import { sanityClient } from "./client";
+import { isBot, sanityCdnClient, sanityClient } from "./client";
 import { urlForImage, urlForLogo, urlForOgImage } from "./imageUrl";
 import { HOME_CONTENT_QUERY } from "./queries";
 import type { HomeContent, SiteSettingsQueryResult } from "./types";
@@ -55,10 +56,13 @@ type HomeContentQueryResult = Partial<Omit<HomeContent, "settings">> & {
 };
 
 async function fetchHomeContent(): Promise<HomeContentQueryResult | null> {
-  if (!sanityClient) return null;
+  // Pessoas leem direto da API (conteúdo na hora); robôs leem do CDN para poupar a cota
+  const userAgent = (await headers()).get("user-agent");
+  const client = isBot(userAgent) ? sanityCdnClient : sanityClient;
+  if (!client) return null;
   try {
     // Sem cache de dados do Next: a página já é dinâmica e precisa do conteúdo atual
-    return await sanityClient.fetch<HomeContentQueryResult>(
+    return await client.fetch<HomeContentQueryResult>(
       HOME_CONTENT_QUERY,
       {},
       { cache: "no-store" },
