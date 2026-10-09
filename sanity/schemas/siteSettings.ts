@@ -1,14 +1,34 @@
-import { defineField, defineType } from "sanity";
+import {
+  BlockElementIcon,
+  CogIcon,
+  EnvelopeIcon,
+  MenuIcon,
+  SearchIcon,
+} from "@sanity/icons";
+import { defineField, defineType } from "@sanity/types";
 
 export const siteSettings = defineType({
   name: "siteSettings",
   title: "Configurações do Site",
   type: "document",
+  icon: CogIcon,
   groups: [
-    { name: "seo", title: "SEO", default: true },
-    { name: "header", title: "Cabeçalho" },
-    { name: "contact", title: "Contato" },
-    { name: "footer", title: "Rodapé" },
+    { name: "seo", title: "SEO", icon: SearchIcon, default: true },
+    { name: "header", title: "Cabeçalho", icon: MenuIcon },
+    { name: "contact", title: "Contato", icon: EnvelopeIcon },
+    { name: "footer", title: "Rodapé", icon: BlockElementIcon },
+  ],
+  fieldsets: [
+    {
+      name: "privacy",
+      title: "Política de Privacidade",
+      description: "Envie o PDF ou informe uma URL. O PDF tem prioridade.",
+    },
+    {
+      name: "terms",
+      title: "Termos de Uso",
+      description: "Envie o PDF ou informe uma URL. O PDF tem prioridade.",
+    },
   ],
   fields: [
     defineField({
@@ -74,32 +94,32 @@ export const siteSettings = defineType({
     }),
     defineField({
       name: "privacyPolicyFile",
-      title: "Política de Privacidade (PDF)",
-      description: "Tem prioridade sobre a URL abaixo",
+      title: "PDF",
+      fieldset: "privacy",
       type: "file",
       options: { accept: "application/pdf" },
       group: "footer",
     }),
     defineField({
       name: "privacyPolicyUrl",
-      title: "URL da Política de Privacidade",
-      description: "Usada se nenhum PDF for enviado acima",
+      title: "URL",
+      fieldset: "privacy",
       type: "url",
       validation: (Rule) => Rule.uri({ allowRelative: true }),
       group: "footer",
     }),
     defineField({
       name: "termsFile",
-      title: "Termos de Uso (PDF)",
-      description: "Tem prioridade sobre a URL abaixo",
+      title: "PDF",
+      fieldset: "terms",
       type: "file",
       options: { accept: "application/pdf" },
       group: "footer",
     }),
     defineField({
       name: "termsUrl",
-      title: "URL dos Termos de Uso",
-      description: "Usada se nenhum PDF for enviado acima",
+      title: "URL",
+      fieldset: "terms",
       type: "url",
       validation: (Rule) => Rule.uri({ allowRelative: true }),
       group: "footer",

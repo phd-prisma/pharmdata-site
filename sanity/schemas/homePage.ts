@@ -1,4 +1,15 @@
-import { defineArrayMember, defineField, defineType } from "sanity";
+import {
+  BarChartIcon,
+  BulbOutlineIcon,
+  CaseIcon,
+  EnvelopeIcon,
+  HomeIcon,
+  RocketIcon,
+  StarIcon,
+  UsersIcon,
+  WarningOutlineIcon,
+} from "@sanity/icons";
+import { defineArrayMember, defineField, defineType } from "@sanity/types";
 
 const text = (name: string, title: string, rows?: number) =>
   defineField(
@@ -11,15 +22,16 @@ export const homePage = defineType({
   name: "homePage",
   title: "Página Inicial",
   type: "document",
+  icon: HomeIcon,
   groups: [
-    { name: "hero", title: "Hero", default: true },
-    { name: "stats", title: "Números" },
-    { name: "problem", title: "Problema" },
-    { name: "solution", title: "Solução" },
-    { name: "differentials", title: "Diferenciais" },
-    { name: "team", title: "Quem somos" },
-    { name: "clients", title: "Clientes" },
-    { name: "contact", title: "Contato" },
+    { name: "hero", title: "Hero", icon: RocketIcon, default: true },
+    { name: "stats", title: "Números", icon: BarChartIcon },
+    { name: "problem", title: "Problema", icon: WarningOutlineIcon },
+    { name: "solution", title: "Solução", icon: BulbOutlineIcon },
+    { name: "differentials", title: "Diferenciais", icon: StarIcon },
+    { name: "team", title: "Quem somos", icon: UsersIcon },
+    { name: "clients", title: "Clientes", icon: CaseIcon },
+    { name: "contact", title: "Contato", icon: EnvelopeIcon },
   ],
   fields: [
     defineField({
@@ -27,14 +39,18 @@ export const homePage = defineType({
       title: "Hero",
       type: "object",
       group: "hero",
+      fieldsets: [
+        { name: "ctas", title: "Botões", options: { columns: 2 } },
+        { name: "card", title: "Card de exemplo", options: { columns: 2 } },
+      ],
       fields: [
         text("eyebrow", "Chamada acima do título"),
         text("title", "Título", 2),
         text("text", "Texto", 3),
-        defineField({ name: "primaryCta", title: "Botão principal", type: "link" }),
-        defineField({ name: "secondaryCta", title: "Botão secundário", type: "link" }),
-        text("recordLabel", "Rótulo do card (ex.: REGISTRO · EXEMPLO)"),
-        text("recordStatus", "Status do card (ex.: CURADO)"),
+        defineField({ name: "primaryCta", title: "Principal", type: "link", fieldset: "ctas" }),
+        defineField({ name: "secondaryCta", title: "Secundário", type: "link", fieldset: "ctas" }),
+        { ...text("recordLabel", "Rótulo (ex.: REGISTRO · EXEMPLO)"), fieldset: "card" },
+        { ...text("recordStatus", "Status (ex.: CURADO)"), fieldset: "card" },
         defineField({
           name: "records",
           title: "Registros de exemplo",
@@ -76,6 +92,7 @@ export const homePage = defineType({
         defineArrayMember({
           type: "object",
           name: "stat",
+          icon: BarChartIcon,
           fields: [text("value", "Valor"), text("label", "Descrição")],
           preview: { select: { title: "value", subtitle: "label" } },
         }),

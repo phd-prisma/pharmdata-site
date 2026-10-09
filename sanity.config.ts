@@ -4,13 +4,17 @@ import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { schemaTypes, singletonTypes } from "./sanity/schemas";
 import { structure } from "./sanity/structure";
+import { StudioIcon } from "./sanity/StudioIcon";
+import { theme } from "./sanity/theme";
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!;
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
 
 export default defineConfig({
   name: "default",
-  title: "PharmData",
+  title: "Pharmdata",
+  icon: StudioIcon,
+  theme,
   basePath: "/studio",
   projectId,
   dataset,

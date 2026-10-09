@@ -19,7 +19,7 @@ const eslintConfig = defineConfig([
     rules: {
       "@stylistic/jsx-one-expression-per-line": "off",
       "@stylistic/multiline-ternary": "off",
-      "@stylistic/operator-linebreak": ["error", "after", { overrides: { "?": "before", ":": "before" } }],
+      "@stylistic/operator-linebreak": ["error", "after", { overrides: { "?": "before", ":": "before", "|": "before", "&": "before" } }],
     },
   },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", ".sanity/**"]),

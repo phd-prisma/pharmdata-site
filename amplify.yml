@@ -9,7 +9,7 @@ frontend:
       commands:
         # Variáveis só do servidor precisam ir para o .env.production,
         # senão não ficam disponíveis no runtime SSR do Amplify
-        - env | grep -E '^(RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL)=' >> .env.production || true
+        - env | grep -E '^(RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL|ADMIN_SESSION_SECRET)=' >> .env.production || true
         - npm run build
   artifacts:
     baseDirectory: .next
