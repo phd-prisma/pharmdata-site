@@ -46,9 +46,7 @@ export async function sendContact(
     process.env.CONTACT_TO_EMAIL?.trim() ||
     (await getHomeContent()).settings.contactEmail;
 
-  const { subject, html, text } = buildContactEmail(parsed.data, {
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || undefined,
-  });
+  const { subject, html, text } = buildContactEmail(parsed.data);
 
   const { error } = await new Resend(apiKey).emails.send({
     from,

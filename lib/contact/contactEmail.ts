@@ -45,10 +45,9 @@ function formatDate(date: Date) {
 
 export function buildContactEmail(
   data: ContactData,
-  { receivedAt = new Date(), siteUrl = "https://pharmdata.com.br" } = {},
+  { receivedAt = new Date() } = {},
 ) {
   const firstName = data.nome.split(" ")[0];
-  const host = siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
   const when = formatDate(receivedAt);
 
   const subject = `Contato pelo site — ${data.nome}${data.empresa ? ` (${data.empresa})` : ""}`;
@@ -76,19 +75,11 @@ export function buildContactEmail(
     mensagem: data.mensagem ? escapeHtml(data.mensagem).replace(/\n/g, "<br />") : "",
   };
 
-  const replyHref = `mailto:${encodeURIComponent(data.email)}?subject=${encodeURIComponent(
-    `Re: ${subject}`,
-  )}`;
-  const phoneHref = data.telefone ? `tel:${data.telefone.replace(/[^\d+]/g, "")}` : "";
-
   const row = (label: string, value: string) => `
     <tr>
       <td style="padding:12px 0;border-bottom:1px solid ${colors.line};width:92px;padding-right:16px;vertical-align:top;font:500 12px/1.5 ${sans};color:${colors.muted};text-transform:uppercase;letter-spacing:0.06em;">${label}</td>
       <td style="padding:12px 0;border-bottom:1px solid ${colors.line};vertical-align:top;word-break:break-word;font:400 15px/1.5 ${sans};color:${colors.ink};">${value}</td>
     </tr>`;
-
-  const link = (href: string, label: string) =>
-    `<a href="${href}" style="color:${colors.tealSoft};text-decoration:none;">${label}</a>`;
 
   const html = `<!doctype html>
 <html lang="pt-BR">
@@ -148,8 +139,8 @@ export function buildContactEmail(
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid ${colors.line};">
                       ${row("Nome", e.nome)}
                       ${row("Empresa", e.empresa || `<span style="color:${colors.muted};">Não informada</span>`)}
-                      ${row("E-mail", link(`mailto:${e.email}`, e.email))}
-                      ${row("Telefone", e.telefone ? link(phoneHref, e.telefone) : `<span style="color:${colors.muted};">Não informado</span>`)}
+                      ${row("E-mail", e.email)}
+                      ${row("Telefone", e.telefone || `<span style="color:${colors.muted};">Não informado</span>`)}
                     </table>
                   </td>
                 </tr>
@@ -164,17 +155,12 @@ export function buildContactEmail(
                   </td>
                 </tr>
 
-                <!-- Ação -->
+                <!-- Como responder: sem links, para não acionar filtros de spam -->
                 <tr>
-                  <td class="px" style="padding:32px 36px 36px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="background:${colors.teal};border-radius:10px;">
-                          <a href="${replyHref}" style="display:inline-block;padding:13px 24px;font:500 15px/1 ${sans};color:#ffffff;text-decoration:none;">Responder a ${e.firstName} →</a>
-                        </td>
-                      </tr>
-                    </table>
-                    <p style="margin:14px 0 0;font:400 13px/1.5 ${sans};color:${colors.muted};">Ou simplesmente responda este e-mail: a resposta vai direto para <span style="word-break:break-all;">${e.email}</span>.</p>
+                  <td class="px" style="padding:28px 36px 36px;">
+                    <div style="background:#e6f0ef;border-radius:10px;padding:14px 18px;font:400 14px/1.55 ${sans};color:${colors.teal};">
+                      <strong style="font-weight:600;">Para responder a ${e.firstName},</strong> use o botão Responder do seu e-mail. A resposta vai direto para <span style="word-break:break-all;">${e.email}</span>.
+                    </div>
                   </td>
                 </tr>
               </table>
@@ -184,7 +170,7 @@ export function buildContactEmail(
           <!-- Rodapé -->
           <tr>
             <td style="padding:20px 4px 0;font:400 12px/1.6 ${sans};color:${colors.muted};">
-              Enviado pelo formulário de contato de ${link(siteUrl, escapeHtml(host))}.
+              Enviado pelo formulário de contato do site da Pharmdata.
             </td>
           </tr>
         </table>
