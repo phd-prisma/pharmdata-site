@@ -3,6 +3,7 @@
 import { Resend } from "resend";
 import * as z from "zod";
 import { getHomeContent } from "@/lib/sanity/getHomeContent";
+import { buildContactEmail } from "./contactEmail";
 
 const schema = z.object({
   nome: z.string().trim().min(1, "Informe seu nome.").max(200),
@@ -45,22 +46,16 @@ export async function sendContact(
     process.env.CONTACT_TO_EMAIL?.trim() ||
     (await getHomeContent()).settings.contactEmail;
 
-  const { nome, empresa, email, telefone, mensagem } = parsed.data;
-  const text = [
-    `Nome: ${nome}`,
-    `Empresa: ${empresa ?? "-"}`,
-    `E-mail: ${email}`,
-    `Telefone: ${telefone ?? "-"}`,
-    "",
-    "Mensagem:",
-    mensagem ?? "-",
-  ].join("\n");
+  const { subject, html, text } = buildContactEmail(parsed.data, {
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || undefined,
+  });
 
   const { error } = await new Resend(apiKey).emails.send({
     from,
     to,
-    replyTo: email,
-    subject: `Contato pelo site — ${nome}${empresa ? ` (${empresa})` : ""}`,
+    replyTo: parsed.data.email,
+    subject,
+    html,
     text,
   });
 

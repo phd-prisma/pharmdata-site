@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint:fix": "eslint --fix",
+    "email:preview": "npx tsx scripts/preview-contact-email.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
