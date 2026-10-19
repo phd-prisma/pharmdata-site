@@ -34,15 +34,15 @@ export async function sendContact(
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.CONTACT_FROM_EMAIL;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.CONTACT_FROM_EMAIL?.trim();
   if (!apiKey || !from) {
     console.error("RESEND_API_KEY ou CONTACT_FROM_EMAIL não configurados.");
     return { ok: false, error: GENERIC_ERROR };
   }
 
   const to =
-    process.env.CONTACT_TO_EMAIL ??
+    process.env.CONTACT_TO_EMAIL?.trim() ||
     (await getHomeContent()).settings.contactEmail;
 
   const { nome, empresa, email, telefone, mensagem } = parsed.data;
