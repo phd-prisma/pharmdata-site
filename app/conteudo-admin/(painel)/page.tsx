@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { formatNumber } from "@/components/admin/analytics/format";
+import { getAnalyticsSummary } from "@/lib/admin/analytics";
 import { getOverview } from "@/lib/admin/data";
 import { requireSession } from "@/lib/admin/session";
 import { ADMIN_BASE } from "@/lib/admin/paths";
@@ -20,7 +22,12 @@ const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
 export default async function OverviewPage() {
-  const [{ team, partners }, session] = await Promise.all([getOverview(), requireSession()]);
+  const [{ team, partners }, session, visits] = await Promise.all([
+    getOverview(),
+    requireSession(),
+    // Sem analytics (ou com o Umami fora do ar) a visão geral continua funcionando
+    getAnalyticsSummary().catch(() => null),
+  ]);
   const firstName = session.name.split(" ")[0];
 
   const cards = [
@@ -75,6 +82,26 @@ export default async function OverviewPage() {
           </Link>
         ))}
       </div>
+
+      {visits && (
+        <Link
+          href={`${ADMIN_BASE}/metricas`}
+          className="pd-card group mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 px-6 py-5 transition-all hover:border-(--a-line-2) hover:shadow-[0_8px_24px_rgb(0_0_0/0.06)]"
+        >
+          <span className="text-xs text-(--a-muted)">Métricas · últimos 7 dias</span>
+          <span className="text-sm">
+            <strong className="text-xl font-semibold tracking-tight">{formatNumber(visits.visitors)}</strong>{" "}
+            {visits.visitors === 1 ? "visitante" : "visitantes"}
+          </span>
+          <span className="text-sm">
+            <strong className="text-xl font-semibold tracking-tight">{formatNumber(visits.pageviews)}</strong>{" "}
+            {visits.pageviews === 1 ? "página vista" : "páginas vistas"}
+          </span>
+          <span className="ml-auto text-sm text-(--a-teal-2)">
+            Ver detalhes <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+          </span>
+        </Link>
+      )}
     </>
   );
 }

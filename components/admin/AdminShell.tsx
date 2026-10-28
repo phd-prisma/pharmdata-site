@@ -14,6 +14,7 @@ export const NAV = [
   { href: `${ADMIN_BASE}/configuracoes`, label: "Configurações" },
   { href: `${ADMIN_BASE}/equipe`, label: "Equipe" },
   { href: `${ADMIN_BASE}/parceiros`, label: "Parceiros" },
+  { href: `${ADMIN_BASE}/metricas`, label: "Métricas" },
 ];
 
 export function AdminShell({
