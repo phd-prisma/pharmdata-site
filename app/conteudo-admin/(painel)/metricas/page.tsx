@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { formatDuration, formatNumber, formatPercent } from "@/components/admin/analytics/format";
+import { PeriodView } from "@/components/admin/analytics/PeriodView";
 import { RankList } from "@/components/admin/analytics/RankList";
 import { RankTabs } from "@/components/admin/analytics/RankTabs";
 import { StatTile } from "@/components/admin/analytics/StatTile";
 import { VisitsChart } from "@/components/admin/analytics/VisitsChart";
 import { type Analytics, getAnalytics, parsePeriod, PERIODS } from "@/lib/admin/analytics";
-import { ADMIN_BASE } from "@/lib/admin/paths";
 
 const ratio = (part: number, total: number) => (total ? part / total : 0);
 
@@ -26,8 +25,10 @@ export default async function AnalyticsPage({
   }
 
   return (
-    <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <PeriodView
+      period={period}
+      periods={Object.entries(PERIODS).map(([key, item]) => ({ key, label: item.label }))}
+      heading={(
         <div>
           <p className="text-xs text-(--a-muted)">Analytics</p>
           <h1 className="mt-1 text-[28px] font-semibold tracking-tight">Métricas do site</h1>
@@ -38,20 +39,8 @@ export default async function AnalyticsPage({
             </p>
           )}
         </div>
-        <nav className="pd-segmented" aria-label="Período">
-          {Object.entries(PERIODS).map(([key, item]) => (
-            <Link
-              key={key}
-              href={`${ADMIN_BASE}/metricas?periodo=${key}`}
-              aria-current={key === period ? "page" : undefined}
-              scroll={false}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-
+      )}
+    >
       {!data
         ? (
             <div className="pd-card mt-8 p-8 text-sm text-(--a-body)">
@@ -61,7 +50,7 @@ export default async function AnalyticsPage({
             </div>
           )
         : <Dashboard data={data} />}
-    </>
+    </PeriodView>
   );
 }
 
