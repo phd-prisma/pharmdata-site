@@ -170,9 +170,11 @@ export function DocumentEditor({
       )}
 
       <div
-        className={`mt-5 grid items-start gap-6 ${showSeo ? "lg:grid-cols-[minmax(0,1fr)_380px]" : ""}`}
+        // minmax(0, 1fr): sem isso a coluna cresce até caber textos longos sem quebra
+        // (ex.: prévias das respostas da FAQ) e a página ganha rolagem horizontal
+        className={`mt-5 grid grid-cols-[minmax(0,1fr)] items-start gap-6 ${showSeo ? "lg:grid-cols-[minmax(0,1fr)_380px]" : ""}`}
       >
-        <section className="pd-card p-6 sm:p-8" key={group}>
+        <section className="pd-card min-w-0 p-6 sm:p-8" key={group}>
           <FieldList
             fields={visibleFields}
             fieldsets={spec.fieldsets}

@@ -62,6 +62,7 @@ export const homePage = defineType({
             defineArrayMember({
               type: "object",
               name: "record",
+              title: "Registro",
               fields: [
                 text("name", "Nome do medicamento"),
                 text("form", "Apresentação"),
@@ -73,6 +74,7 @@ export const homePage = defineType({
                     defineArrayMember({
                       type: "object",
                       name: "recordField",
+                      title: "Campo",
                       fields: [text("label", "Campo"), text("value", "Valor")],
                       preview: { select: { title: "label", subtitle: "value" } },
                     }),
@@ -94,6 +96,7 @@ export const homePage = defineType({
         defineArrayMember({
           type: "object",
           name: "stat",
+          title: "Número",
           icon: BarChartIcon,
           fields: [text("value", "Valor"), text("label", "Descrição")],
           preview: { select: { title: "value", subtitle: "label" } },
@@ -118,6 +121,7 @@ export const homePage = defineType({
             defineArrayMember({
               type: "object",
               name: "problemItem",
+              title: "Problema",
               fields: [
                 text("title", "Título"),
                 text("description", "Descrição", 3),
@@ -146,6 +150,7 @@ export const homePage = defineType({
             defineArrayMember({
               type: "object",
               name: "step",
+              title: "Etapa",
               fields: [
                 text("stage", "Etapa (ex.: ETAPA 01)"),
                 text("tag", "Tag (ex.: HARMONIZAÇÃO)"),
@@ -175,6 +180,7 @@ export const homePage = defineType({
             defineArrayMember({
               type: "object",
               name: "differentialItem",
+              title: "Diferencial",
               fields: [text("title", "Título"), text("description", "Descrição", 3)],
               preview: { select: { title: "title", subtitle: "description" } },
             }),
@@ -222,6 +228,7 @@ export const homePage = defineType({
             defineArrayMember({
               type: "object",
               name: "faqItem",
+              title: "Pergunta",
               fields: [text("question", "Pergunta"), text("answer", "Resposta", 4)],
               preview: { select: { title: "question", subtitle: "answer" } },
             }),
