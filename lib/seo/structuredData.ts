@@ -23,6 +23,15 @@ const KNOWS_ABOUT = [
 
 export function buildStructuredData({ settings, home, team }: HomeContent) {
   const orgId = `${siteUrl}/#organization`;
+  // Imagem quadrada da marca: o Google usa nos cartões de fonte e recorta em quadrado
+  const primaryImage = {
+    "@type": "ImageObject",
+    "@id": `${siteUrl}/#primaryimage`,
+    "url": `${siteUrl}/og/quadrada`,
+    "width": 1200,
+    "height": 1200,
+    "caption": settings.brandName,
+  };
 
   const people = team
     .filter((member) => member.name)
@@ -43,7 +52,13 @@ export function buildStructuredData({ settings, home, team }: HomeContent) {
       "@id": orgId,
       "name": settings.brandName,
       "url": siteUrl,
-      "logo": `${siteUrl}/apple-icon.png`,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/icons/web-app-manifest-512x512.png`,
+        "width": 512,
+        "height": 512,
+      },
+      "image": { "@id": primaryImage["@id"] },
       "description": settings.description,
       "slogan": settings.footerTagline || undefined,
       "email": settings.contactEmail || undefined,
@@ -70,6 +85,17 @@ export function buildStructuredData({ settings, home, team }: HomeContent) {
       "description": settings.description,
       "inLanguage": "pt-BR",
       "publisher": { "@id": orgId },
+    },
+    {
+      "@type": "WebPage",
+      "@id": `${siteUrl}/#webpage`,
+      "url": siteUrl,
+      "name": settings.siteTitle,
+      "description": settings.description,
+      "inLanguage": "pt-BR",
+      "isPartOf": { "@id": `${siteUrl}/#website` },
+      "about": { "@id": orgId },
+      "primaryImageOfPage": primaryImage,
     },
     {
       "@type": "Service",
