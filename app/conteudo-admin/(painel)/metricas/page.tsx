@@ -90,7 +90,7 @@ function Dashboard({ data }: { data: Analytics }) {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_2fr]">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <InfoTile
           label="Voltaram ao site"
           value={formatPercent(ratio(returning.returning, returning.total))}
@@ -103,9 +103,16 @@ function Dashboard({ data }: { data: Analytics }) {
             ? `${formatPercent(ratio(data.conversions, current.visitors))} dos visitantes enviaram o formulário`
             : "Nenhum visitante no período"}
         />
+        <InfoTile
+          label="Vindos de assistentes de IA"
+          value={formatNumber(data.aiVisitors)}
+          note={data.aiVisitors
+            ? `${formatPercent(ratio(data.aiVisitors, current.visitors))} dos visitantes · ${data.aiAssistants[0].label} lidera`
+            : "ChatGPT, Perplexity, Gemini, Claude e Copilot"}
+        />
         <Link
           href={`${ADMIN_BASE}/metricas/visitantes?periodo=${data.period}`}
-          className="pd-card group flex flex-col justify-between gap-4 p-5 transition-all hover:border-(--a-line-2) hover:shadow-[0_8px_24px_rgb(0_0_0/0.06)] sm:col-span-2 lg:col-span-1"
+          className="pd-card group flex flex-col justify-between gap-4 p-5 transition-all hover:border-(--a-line-2) hover:shadow-[0_8px_24px_rgb(0_0_0/0.06)]"
         >
           <div>
             <p className="text-sm text-(--a-muted)">Visitantes</p>
@@ -142,6 +149,11 @@ function Dashboard({ data }: { data: Analytics }) {
           unit="visitantes"
           tabs={[
             { label: "Canais", items: data.channels },
+            {
+              label: "Assistentes de IA",
+              items: data.aiAssistants,
+              empty: "Nenhuma visita vinda do ChatGPT, Perplexity, Gemini, Claude ou Copilot ainda",
+            },
             {
               label: "Sites",
               items: data.referrers,

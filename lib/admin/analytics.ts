@@ -55,6 +55,9 @@ export interface Analytics {
   browsers: Metric[];
   screens: Metric[];
   channels: Metric[];
+  // Visitas vindas de assistentes de IA (ChatGPT, Perplexity…), por assistente
+  aiAssistants: Metric[];
+  aiVisitors: number;
   entries: Metric[];
   exits: Metric[];
   events: Metric[];
@@ -193,6 +196,39 @@ const CHANNELS: Record<string, string> = {
   paidUnknown: "Anúncios",
 };
 
+// Assistentes de IA: reconhecidos pelo site de origem ou pelo utm_source que alguns
+// acrescentam aos links (o ChatGPT, por exemplo, às vezes não envia a origem)
+const AI_ASSISTANTS = [
+  { name: "ChatGPT", match: ["chatgpt.com", "chat.openai.com", "openai.com"] },
+  { name: "Perplexity", match: ["perplexity.ai", "perplexity"] },
+  { name: "Gemini", match: ["gemini.google.com", "bard.google.com", "gemini"] },
+  { name: "Claude", match: ["claude.ai", "claude"] },
+  { name: "Copilot", match: ["copilot.microsoft.com", "copilot.cloud.microsoft", "edgeservices.bing.com", "copilot"] },
+  { name: "Meta AI", match: ["meta.ai"] },
+  { name: "Grok", match: ["grok.com", "grok"] },
+  { name: "DeepSeek", match: ["chat.deepseek.com", "deepseek"] },
+];
+
+// Domínio: igual ou subdomínio. Nome solto (utm_source=perplexity): igual
+function matchesAssistant(value: string, match: string[]) {
+  const v = value.toLowerCase();
+  return match.some((m) => (m.includes(".") ? v === m || v.endsWith(`.${m}`) : v === m));
+}
+
+// Para cada assistente fica o maior valor entre origem e UTM: a mesma visita
+// costuma trazer os dois, e somar contaria a pessoa duas vezes
+function aiAssistantMetrics(referrers: { x: string; y: number }[], utmSources: { x: string; y: number }[]) {
+  const total = (rows: { x: string; y: number }[], match: string[]) =>
+    rows.filter((row) => row.x && matchesAssistant(row.x, match)).reduce((sum, row) => sum + row.y, 0);
+  return AI_ASSISTANTS
+    .map((assistant) => ({
+      label: assistant.name,
+      value: Math.max(total(referrers, assistant.match), total(utmSources, assistant.match)),
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value);
+}
+
 // Eventos marcados no site (data-umami-event e umami.track)
 export const CONVERSION_EVENT = "contato-enviado";
 const EVENTS: Record<string, string> = {
@@ -248,7 +284,7 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
   const [
     stats, series, active, pages, referrers,
     countries, regions, cities, devices, systems, browsers, screens,
-    channels, entries, exits, events, sessionList, weekly,
+    channels, entries, exits, events, sessionList, weekly, utmSources,
   ] = await Promise.all([
     umami<Stats & { comparison: Stats }>(cfg, "/stats", range),
     umami<{ pageviews: { x: string; y: number }[]; sessions: { x: string; y: number }[] }>(
@@ -258,7 +294,8 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
     ),
     umami<{ visitors: number }>(cfg, "/active", {}),
     metric("path"),
-    metric("referrer"),
+    // Lista longa para achar os assistentes de IA; o cartão mostra só os 8 primeiros
+    metric("referrer", 500),
     metric("country"),
     metric("region"),
     metric("city"),
@@ -272,7 +309,9 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
     metric("event", 20),
     umami<SessionPage>(cfg, "/sessions", { ...range, page: 1, pageSize: 1000 }),
     umami<number[][]>(cfg, "/sessions/weekly", { ...range, timezone: TIMEZONE }),
+    metric("utmSource", 500),
   ]);
+  const aiAssistants = aiAssistantMetrics(referrers, utmSources);
   const visitors = mergeSessions(sessionList.data);
 
   // O Umami só devolve os dias que tiveram visita; o gráfico precisa de todos
@@ -299,7 +338,7 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
     activeNow: active.visitors ?? 0,
     days: dayPoints,
     pages: toMetrics(pages, (x) => x || "/"),
-    referrers: toMetrics(referrers, (x) => x || "Acesso direto"),
+    referrers: toMetrics(referrers.slice(0, 8), (x) => x || "Acesso direto"),
     countries: toMetrics(countries, countryName),
     regions: toMetrics(regions, regionName),
     cities: toMetrics(cities, withCountry),
@@ -308,6 +347,8 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
     browsers: toMetrics(browsers, (x) => BROWSERS[x] ?? x),
     screens: toMetrics(screens, (x) => x.replace("x", " × ")),
     channels: toMetrics(channels, (x) => CHANNELS[x] ?? x),
+    aiAssistants,
+    aiVisitors: aiAssistants.reduce((sum, item) => sum + item.value, 0),
     entries: toMetrics(entries, (x) => x || "/"),
     exits: toMetrics(exits, (x) => x || "/"),
     events: toMetrics(events, (x) => EVENTS[x] ?? x),
