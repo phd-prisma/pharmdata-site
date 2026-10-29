@@ -54,6 +54,36 @@ export interface Analytics {
   systems: Metric[];
   browsers: Metric[];
   screens: Metric[];
+  channels: Metric[];
+  entries: Metric[];
+  exits: Metric[];
+  events: Metric[];
+  conversions: number;
+  // Visitantes que vieram mais de uma vez no período
+  returning: { returning: number; total: number; capped: boolean };
+  // [dia da semana 0=domingo][hora 0–23], horário de Brasília
+  weekly: number[][];
+}
+
+export interface VisitorSummary {
+  id: string;
+  device: string;
+  system: string;
+  browser: string;
+  location: string;
+  language: string;
+  visits: number;
+  views: number;
+  firstAt: string;
+  lastAt: string;
+}
+
+export interface VisitorActivity {
+  at: string;
+  visitId: string;
+  kind: "page" | "event";
+  label: string;
+  referrer?: string;
 }
 
 function config() {
@@ -63,8 +93,10 @@ function config() {
   // UMAMI_WEBSITE_ID permite ver os dados no dev sem carregar o script de rastreamento
   const websiteId =
     process.env.UMAMI_WEBSITE_ID?.trim() || process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID?.trim();
+  // Só conta o domínio oficial (com e sem www), não o endereço provisório da AWS
+  const hostname = process.env.UMAMI_HOSTNAME?.trim() || "pharmdata.com.br";
   if (!url || !username || !password || !websiteId) return null;
-  return { url: url.replace(/\/$/, ""), username, password, websiteId };
+  return { url: url.replace(/\/$/, ""), username, password, websiteId, hostname };
 }
 
 export const analyticsConfigured = () => config() !== null;
@@ -143,7 +175,43 @@ const BR_STATES: Record<string, string> = {
   SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
 };
 
+const CHANNELS: Record<string, string> = {
+  direct: "Acesso direto",
+  organicSearch: "Busca orgânica",
+  paidSearch: "Busca paga",
+  organicSocial: "Redes sociais",
+  paidSocial: "Redes sociais (anúncio)",
+  email: "E-mail",
+  sms: "SMS",
+  referral: "Outros sites",
+  video: "Vídeo",
+  paidVideo: "Vídeo (anúncio)",
+  organicShopping: "Shopping",
+  paidShopping: "Shopping (anúncio)",
+  affiliate: "Afiliados",
+  paidAds: "Anúncios",
+  paidUnknown: "Anúncios",
+};
+
+// Eventos marcados no site (data-umami-event e umami.track)
+export const CONVERSION_EVENT = "contato-enviado";
+const EVENTS: Record<string, string> = {
+  [CONVERSION_EVENT]: "Formulário de contato enviado",
+  "cta-cabecalho": "Clique no botão do cabeçalho",
+  "cta-hero-agendar": "Clique em “Agende uma conversa”",
+  "cta-hero-como-funciona": "Clique em “Como funciona”",
+};
+
 const countryNames = new Intl.DisplayNames(["pt-BR"], { type: "region" });
+const languageNames = new Intl.DisplayNames(["pt-BR"], { type: "language" });
+
+function languageName(code: string) {
+  try {
+    return languageNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 function countryName(code: string) {
   try {
@@ -173,13 +241,14 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
   // Começa à meia-noite (horário de Brasília) do primeiro dia do período
   const startOfToday = Math.floor((now - SP_OFFSET) / DAY) * DAY + SP_OFFSET;
   const startAt = startOfToday - (days - 1) * DAY;
-  const range = { startAt, endAt: now };
+  const range = { startAt, endAt: now, hostname: `c.${cfg.hostname}` };
   const metric = (type: string, limit = 8) =>
     umami<{ x: string; y: number; country?: string }[]>(cfg, "/metrics", { ...range, type, limit });
 
   const [
     stats, series, active, pages, referrers,
     countries, regions, cities, devices, systems, browsers, screens,
+    channels, entries, exits, events, sessionList, weekly,
   ] = await Promise.all([
     umami<Stats & { comparison: Stats }>(cfg, "/stats", range),
     umami<{ pageviews: { x: string; y: number }[]; sessions: { x: string; y: number }[] }>(
@@ -197,7 +266,14 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
     metric("os"),
     metric("browser"),
     metric("screen"),
+    metric("channel"),
+    metric("entry"),
+    metric("exit"),
+    metric("event", 20),
+    umami<SessionPage>(cfg, "/sessions", { ...range, page: 1, pageSize: 1000 }),
+    umami<number[][]>(cfg, "/sessions/weekly", { ...range, timezone: TIMEZONE }),
   ]);
+  const visitors = mergeSessions(sessionList.data);
 
   // O Umami só devolve os dias que tiveram visita; o gráfico precisa de todos
   const byDay = (points: { x: string; y: number }[]) =>
@@ -231,6 +307,17 @@ export async function getAnalytics(period: Period): Promise<Analytics | null> {
     systems: toMetrics(systems, (x) => x),
     browsers: toMetrics(browsers, (x) => BROWSERS[x] ?? x),
     screens: toMetrics(screens, (x) => x.replace("x", " × ")),
+    channels: toMetrics(channels, (x) => CHANNELS[x] ?? x),
+    entries: toMetrics(entries, (x) => x || "/"),
+    exits: toMetrics(exits, (x) => x || "/"),
+    events: toMetrics(events, (x) => EVENTS[x] ?? x),
+    conversions: events.find((row) => row.x === CONVERSION_EVENT)?.y ?? 0,
+    returning: {
+      returning: visitors.filter((visitor) => visitor.visits > 1).length,
+      total: visitors.length,
+      capped: sessionList.count > sessionList.data.length,
+    },
+    weekly,
   };
 }
 
@@ -243,6 +330,120 @@ export async function getAnalyticsSummary() {
   const stats = await umami<Stats & { comparison: Stats }>(cfg, "/stats", {
     startAt: startOfToday - 6 * DAY,
     endAt: now,
+    hostname: `c.${cfg.hostname}`,
   });
   return { visitors: stats.visitors, previous: stats.comparison.visitors, pageviews: stats.pageviews };
+}
+
+interface Session {
+  id: string;
+  hostname: string;
+  browser: string;
+  os: string;
+  device: string;
+  language: string;
+  country: string;
+  region: string;
+  city: string;
+  firstAt: string;
+  lastAt: string;
+  visits: number | string;
+  views: number | string;
+}
+
+interface SessionPage {
+  data: Session[];
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+function toVisitor(session: Session): VisitorSummary {
+  const place = [session.city, session.region ? regionName(session.region, session.country) : ""]
+    .filter((part, index, parts) => part && parts.indexOf(part) === index)
+    .join(", ");
+  return {
+    id: session.id,
+    device: DEVICES[session.device] ?? session.device,
+    system: session.os,
+    browser: BROWSERS[session.browser] ?? session.browser,
+    location: withCountry(place || countryName(session.country), session.country),
+    language: session.language ? languageName(session.language) : "",
+    visits: Number(session.visits),
+    views: Number(session.views),
+    firstAt: session.firstAt,
+    lastAt: session.lastAt,
+  };
+}
+
+// O Umami devolve uma linha por visitante e domínio (com e sem www); junta as duas
+function mergeSessions(sessions: Session[]) {
+  const byId = new Map<string, VisitorSummary>();
+  for (const session of sessions) {
+    const visitor = toVisitor(session);
+    const seen = byId.get(visitor.id);
+    if (!seen) {
+      byId.set(visitor.id, visitor);
+      continue;
+    }
+    seen.visits += visitor.visits;
+    seen.views += visitor.views;
+    if (visitor.firstAt < seen.firstAt) seen.firstAt = visitor.firstAt;
+    if (visitor.lastAt > seen.lastAt) seen.lastAt = visitor.lastAt;
+  }
+  return [...byId.values()].sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+}
+
+export const VISITORS_PAGE_SIZE = 25;
+
+export async function getVisitors(period: Period, page: number) {
+  const cfg = config();
+  if (!cfg) return null;
+  const now = Date.now();
+  const startOfToday = Math.floor((now - SP_OFFSET) / DAY) * DAY + SP_OFFSET;
+  const result = await umami<SessionPage>(cfg, "/sessions", {
+    startAt: startOfToday - (PERIODS[period].days - 1) * DAY,
+    endAt: now,
+    hostname: `c.${cfg.hostname}`,
+    page,
+    pageSize: VISITORS_PAGE_SIZE,
+  });
+  return {
+    visitors: mergeSessions(result.data),
+    page: result.page,
+    hasMore: result.page * result.pageSize < result.count,
+  };
+}
+
+export async function getVisitor(id: string) {
+  const cfg = config();
+  if (!cfg || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  const session = await umami<Session & { hostname?: string }>(cfg, `/sessions/${id}`, {}).catch(() => null);
+  if (!session?.id) return null;
+
+  const activity = await umami<{
+    createdAt: string;
+    urlPath: string;
+    referrerDomain: string | null;
+    eventType: number;
+    eventName: string | null;
+    visitId: string;
+    hostname: string;
+  }[]>(cfg, `/sessions/${id}/activity`, {
+    startAt: new Date(session.firstAt).getTime() - DAY,
+    endAt: Date.now(),
+  });
+
+  return {
+    visitor: toVisitor(session),
+    activity: activity
+      .filter((item) => item.hostname?.includes(cfg.hostname))
+      .map<VisitorActivity>((item) => ({
+        at: item.createdAt,
+        visitId: item.visitId,
+        kind: item.eventType === 2 ? "event" : "page",
+        label: item.eventType === 2 ? EVENTS[item.eventName ?? ""] ?? item.eventName ?? "Evento" : item.urlPath || "/",
+        referrer: item.referrerDomain ?? undefined,
+      })),
+  };
 }

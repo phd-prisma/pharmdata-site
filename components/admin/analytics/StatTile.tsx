@@ -35,3 +35,14 @@ export function StatTile({
     </div>
   );
 }
+
+// Número sem comparação com o período anterior, com uma linha explicativa
+export function InfoTile({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="pd-card p-5">
+      <p className="text-sm text-(--a-muted)">{label}</p>
+      <p className="mt-2 text-[28px] font-semibold leading-none tracking-tight">{value}</p>
+      <p className="mt-3 text-xs text-(--a-muted)">{note}</p>
+    </div>
+  );
+}

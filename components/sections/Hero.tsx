@@ -25,10 +25,10 @@ export function Hero({ content }: { content: HomePage["hero"] }) {
         <h1>{content.title}</h1>
         <p>{content.text}</p>
         <div className="actions">
-          <a href={content.primaryCta.href} className="btn btn-primary">
+          <a href={content.primaryCta.href} className="btn btn-primary" data-umami-event="cta-hero-agendar">
             {content.primaryCta.label}
           </a>
-          <a href={content.secondaryCta.href} className="btn btn-ghost">
+          <a href={content.secondaryCta.href} className="btn btn-ghost" data-umami-event="cta-hero-como-funciona">
             {content.secondaryCta.label}
           </a>
         </div>

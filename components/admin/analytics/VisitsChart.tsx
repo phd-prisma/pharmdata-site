@@ -71,7 +71,7 @@ export function VisitsChart({ days }: { days: DayPoint[] }) {
                 left: `clamp(70px, ${((hover + 0.5) / days.length) * 100}%, calc(100% - 70px))`,
               }}
             >
-              <p className="font-medium capitalize">{formatLongDate(active.date)}</p>
+              <p className="font-medium first-letter:uppercase">{formatLongDate(active.date)}</p>
               <p className="mt-1 text-(--a-body)">
                 <span className="mr-1.5 inline-block size-2 rounded-full bg-(--a-teal-2)" />
                 {formatNumber(active.visitors)} {active.visitors === 1 ? "visitante" : "visitantes"}
@@ -107,7 +107,7 @@ export function VisitsChart({ days }: { days: DayPoint[] }) {
             <tbody>
               {[...days].reverse().map((day) => (
                 <tr key={day.date} className="border-t border-(--a-line)">
-                  <td className="px-3 py-1.5 capitalize">{formatLongDate(day.date)}</td>
+                  <td className="px-3 py-1.5 first-letter:uppercase">{formatLongDate(day.date)}</td>
                   <td className="px-3 py-1.5 text-right">{formatNumber(day.visitors)}</td>
                   <td className="px-3 py-1.5 text-right">{formatNumber(day.pageviews)}</td>
                 </tr>

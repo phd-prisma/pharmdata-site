@@ -1,9 +1,12 @@
 import { formatDuration, formatNumber, formatPercent } from "@/components/admin/analytics/format";
 import { PeriodView } from "@/components/admin/analytics/PeriodView";
+import { InfoTile, StatTile } from "@/components/admin/analytics/StatTile";
+import { WeeklyHeatmap } from "@/components/admin/analytics/WeeklyHeatmap";
 import { RankList } from "@/components/admin/analytics/RankList";
 import { RankTabs } from "@/components/admin/analytics/RankTabs";
-import { StatTile } from "@/components/admin/analytics/StatTile";
 import { VisitsChart } from "@/components/admin/analytics/VisitsChart";
+import Link from "next/link";
+import { ADMIN_BASE } from "@/lib/admin/paths";
 import { type Analytics, getAnalytics, parsePeriod, PERIODS } from "@/lib/admin/analytics";
 
 const ratio = (part: number, total: number) => (total ? part / total : 0);
@@ -55,7 +58,7 @@ export default async function AnalyticsPage({
 }
 
 function Dashboard({ data }: { data: Analytics }) {
-  const { current, previous } = data;
+  const { current, previous, returning } = data;
 
   return (
     <>
@@ -87,6 +90,35 @@ function Dashboard({ data }: { data: Analytics }) {
         />
       </div>
 
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_2fr]">
+        <InfoTile
+          label="Voltaram ao site"
+          value={formatPercent(ratio(returning.returning, returning.total))}
+          note={`${formatNumber(returning.returning)} de ${formatNumber(returning.total)} visitantes vieram mais de uma vez${returning.capped ? " (amostra)" : ""}`}
+        />
+        <InfoTile
+          label="Contatos pelo formulário"
+          value={formatNumber(data.conversions)}
+          note={current.visitors
+            ? `${formatPercent(ratio(data.conversions, current.visitors))} dos visitantes enviaram o formulário`
+            : "Nenhum visitante no período"}
+        />
+        <Link
+          href={`${ADMIN_BASE}/metricas/visitantes?periodo=${data.period}`}
+          className="pd-card group flex flex-col justify-between gap-4 p-5 transition-all hover:border-(--a-line-2) hover:shadow-[0_8px_24px_rgb(0_0_0/0.06)] sm:col-span-2 lg:col-span-1"
+        >
+          <div>
+            <p className="text-sm text-(--a-muted)">Visitantes</p>
+            <p className="mt-2 text-sm text-(--a-body)">
+              Veja cada visitante: aparelho, cidade, quantas vezes veio e o caminho que fez no site.
+            </p>
+          </div>
+          <span className="text-sm text-(--a-teal-2)">
+            Ver lista de visitantes <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+          </span>
+        </Link>
+      </div>
+
       <section className="pd-card mt-4 p-5 sm:p-6">
         <div className="mb-6 flex items-baseline justify-between text-sm">
           <h2 className="font-semibold">Visitantes por dia</h2>
@@ -96,12 +128,26 @@ function Dashboard({ data }: { data: Analytics }) {
       </section>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <RankList title="Páginas mais vistas" unit="visitantes" items={data.pages} mono />
-        <RankList
+        <RankTabs
+          title="Páginas"
+          unit="visitantes"
+          tabs={[
+            { label: "Mais vistas", items: data.pages, mono: true },
+            { label: "Entrada", items: data.entries, mono: true },
+            { label: "Saída", items: data.exits, mono: true },
+          ]}
+        />
+        <RankTabs
           title="De onde vieram"
           unit="visitantes"
-          items={data.referrers}
-          empty="Todos chegaram digitando o endereço ou por link direto"
+          tabs={[
+            { label: "Canais", items: data.channels },
+            {
+              label: "Sites",
+              items: data.referrers,
+              empty: "Todos chegaram digitando o endereço ou por link direto",
+            },
+          ]}
         />
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -123,6 +169,22 @@ function Dashboard({ data }: { data: Analytics }) {
             { label: "Navegador", items: data.browsers },
             { label: "Tela", items: data.screens },
           ]}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[3fr_2fr]">
+        <section className="pd-card p-5 sm:p-6">
+          <div className="mb-4 flex items-baseline justify-between text-sm">
+            <h2 className="font-semibold">Quando as pessoas visitam</h2>
+            <span className="text-xs text-(--a-muted)">visitantes · horário de Brasília</span>
+          </div>
+          <WeeklyHeatmap weekly={data.weekly} />
+        </section>
+        <RankList
+          title="Cliques e conversões"
+          unit="vezes"
+          items={data.events}
+          empty="Nenhum clique nos botões principais nem envio do formulário ainda"
         />
       </div>
 

@@ -14,7 +14,7 @@ export function Header({ settings }: { settings: SiteSettings }) {
             </a>
           ))}
         </nav>
-        <a href={settings.headerCta.href} className="btn btn-primary">
+        <a href={settings.headerCta.href} className="btn btn-primary" data-umami-event="cta-cabecalho">
           {settings.headerCta.label}
         </a>
       </div>

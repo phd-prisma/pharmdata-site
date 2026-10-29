@@ -33,6 +33,10 @@ export const metadata: Metadata = {
 };
 
 const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID?.trim();
+// Só registra visitas no domínio oficial (com e sem www), não no endereço provisório da AWS
+const siteHost = new URL(process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://pharmdata.com.br").hostname.replace(/^www\./, "");
+const umamiDomains = `${siteHost},www.${siteHost}`;
+
 const umamiScriptUrl =
   process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL?.trim() || "https://cloud.umami.is/script.js";
 
@@ -64,6 +68,7 @@ export default function RootLayout({
           src={umamiScriptUrl}
           data-website-id={umamiWebsiteId}
           data-before-send="pdUmamiFilter"
+          data-domains={umamiDomains}
           strategy="afterInteractive"
         />
       )}

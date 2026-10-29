@@ -25,6 +25,8 @@ export function Contact({
       if (result.ok) {
         formRef.current?.reset();
         setSent(true);
+        // Conversão no Umami (aparece em Métricas › Conversões)
+        window.umami?.track("contato-enviado");
       } else {
         setError(result.error);
       }

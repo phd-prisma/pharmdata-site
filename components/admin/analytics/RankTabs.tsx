@@ -12,7 +12,7 @@ export function RankTabs({
 }: {
   title: string;
   unit: string;
-  tabs: { label: string; items: Metric[] }[];
+  tabs: { label: string; items: Metric[]; mono?: boolean; empty?: string }[];
 }) {
   const [active, setActive] = useState(0);
   const tab = tabs[active];
@@ -37,7 +37,7 @@ export function RankTabs({
       </div>
       <p className="mt-3 text-right text-xs text-(--a-muted)">{unit}</p>
       <div className="-mt-2">
-        <RankItems items={tab.items} empty="Nenhum dado no período" />
+        <RankItems items={tab.items} empty={tab.empty ?? "Nenhum dado no período"} mono={tab.mono} />
       </div>
     </section>
   );
