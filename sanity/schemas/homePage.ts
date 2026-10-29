@@ -3,6 +3,7 @@ import {
   BulbOutlineIcon,
   CaseIcon,
   EnvelopeIcon,
+  HelpCircleIcon,
   HomeIcon,
   RocketIcon,
   StarIcon,
@@ -31,6 +32,7 @@ export const homePage = defineType({
     { name: "differentials", title: "Diferenciais", icon: StarIcon },
     { name: "team", title: "Quem somos", icon: UsersIcon },
     { name: "clients", title: "Clientes", icon: CaseIcon },
+    { name: "faq", title: "Perguntas frequentes", icon: HelpCircleIcon },
     { name: "contact", title: "Contato", icon: EnvelopeIcon },
   ],
   fields: [
@@ -201,6 +203,31 @@ export const homePage = defineType({
       type: "object",
       group: "clients",
       fields: [text("label", "Rótulo")],
+    }),
+    defineField({
+      name: "faq",
+      title: "Perguntas frequentes",
+      description:
+        "Aparece antes do Contato e é lida por buscadores e assistentes de IA. Comece cada resposta já respondendo a pergunta.",
+      type: "object",
+      group: "faq",
+      fields: [
+        text("eyebrow", "Chamada acima do título"),
+        text("title", "Título", 2),
+        defineField({
+          name: "items",
+          title: "Perguntas",
+          type: "array",
+          of: [
+            defineArrayMember({
+              type: "object",
+              name: "faqItem",
+              fields: [text("question", "Pergunta"), text("answer", "Resposta", 4)],
+              preview: { select: { title: "question", subtitle: "answer" } },
+            }),
+          ],
+        }),
+      ],
     }),
     defineField({
       name: "contact",

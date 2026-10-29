@@ -182,6 +182,12 @@ export const defaultContent: HomeContent = {
       lead: "Experiência em farmacovigilância, indústria, farmácia hospitalar e clínica e segurança do paciente, somada a modelagem de dados, interoperabilidade em saúde e governança da informação.",
     },
     clients: { label: "CLIENTES E PARCEIROS" },
+    // Sem perguntas padrão: a seção só aparece depois de publicada no Sanity
+    faq: {
+      eyebrow: "Perguntas frequentes",
+      title: "Dúvidas comuns antes de começar",
+      items: [],
+    },
     contact: {
       eyebrow: "05 — Contato",
       title: "Os dados que você precisa, no formato que seu sistema consome.",

@@ -702,3 +702,45 @@ form .btn:disabled {
 .footer a:hover {
   color: var(--paper);
 }
+
+/* Perguntas frequentes */
+.faq {
+  border-top: 1px solid var(--ink);
+  max-width: 880px;
+}
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+.faq-item summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary::after {
+  content: "+";
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--amber);
+  transition: transform 0.2s;
+}
+.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+.faq-item summary .h3 {
+  font-size: 21px;
+}
+.faq-item p {
+  max-width: 720px;
+  padding-bottom: 28px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--body);
+  text-wrap: pretty;
+}

@@ -88,6 +88,11 @@ export interface HomePage {
   };
   team: { eyebrow: string; title: string; lead: string };
   clients: { label: string };
+  faq: {
+    eyebrow: string;
+    title: string;
+    items: { question: string; answer: string }[];
+  };
   contact: {
     eyebrow: string;
     title: string;

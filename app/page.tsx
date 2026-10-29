@@ -10,7 +10,9 @@ import { Differentials } from "@/components/sections/Differentials";
 import { Team } from "@/components/sections/Team";
 import { Clients } from "@/components/sections/Clients";
 import { Contact } from "@/components/sections/Contact";
+import { Faq } from "@/components/sections/Faq";
 import { getHomeContent } from "@/lib/sanity/getHomeContent";
+import { buildStructuredData, serializeJsonLd } from "@/lib/seo/structuredData";
 
 // Renderiza a cada visita: o Amplify não persiste a revalidação (ISR) do Next 16,
 // então o conteúdo publicado no Sanity aparece em segundos, sem novo deploy
@@ -43,10 +45,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { settings, home, team, partners } = await getHomeContent();
+  const content = await getHomeContent();
+  const { settings, home, team, partners } = content;
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildStructuredData(content)) }}
+      />
       <Header settings={settings} />
       <main>
         <Hero content={home.hero} />
@@ -56,6 +63,7 @@ export default async function Home() {
         <Differentials content={home.differentials} />
         <Team content={home.team} members={team} />
         <Clients content={home.clients} partners={partners} />
+        <Faq content={home.faq} />
         <Contact content={home.contact} settings={settings} />
       </main>
       <Footer settings={settings} />
