@@ -8,7 +8,7 @@ export const post = defineType({
   icon: DocumentTextIcon,
   groups: [
     { name: "content", title: "Conteúdo", default: true },
-    { name: "details", title: "Capa e resumo" },
+    { name: "details", title: "Detalhes" },
     { name: "seo", title: "SEO" },
   ],
   orderings: [
@@ -100,7 +100,7 @@ export const post = defineType({
       title: "Imagem de capa",
       description: "Formato horizontal (16:9) funciona melhor.",
       type: "image",
-      group: "details",
+      group: "content",
       options: { hotspot: true },
       fields: [
         defineField({

@@ -222,50 +222,147 @@
   margin-bottom: 56px;
 }
 .blog-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 28px;
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--post-ink);
 }
-.blog-item {
-  border-bottom: 1px solid var(--post-line);
+.blog-card {
+  min-width: 0;
 }
-.blog-item a {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  gap: 24px 48px;
-  align-items: center;
-  padding: 32px 0;
+.blog-card > a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #d6d1c3;
+  background: #fbfaf6;
   color: inherit;
+  transition:
+    transform 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
-.blog-item h2 {
-  margin: 12px 0 0;
+.blog-card > a:hover {
+  transform: translateY(-3px);
+  border-color: #b9b4a6;
+  box-shadow: 0 24px 48px -28px rgba(0, 42, 45, 0.35);
+}
+.blog-card-media {
+  position: relative;
+  flex-shrink: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--post-teal);
+}
+.blog-card-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+.blog-card > a:hover .blog-card-media img {
+  transform: scale(1.03);
+}
+/* Artigo sem capa: painel da marca, para a grade não ficar com buracos */
+.blog-card-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 24px;
+  color: var(--post-paper);
+}
+.blog-card-fallback strong {
   font-family: var(--post-serif);
+  font-size: 20px;
   font-weight: 500;
-  font-size: 28px;
+}
+.blog-card-fallback span {
+  font-family: var(--post-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e2b36b;
+}
+.blog-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+}
+.blog-card-category {
+  font-family: var(--post-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--post-amber);
+}
+.blog-card h2 {
+  margin: 0;
+  font-family: var(--post-serif);
+  font-size: 25px;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--post-teal);
   text-wrap: balance;
+  overflow-wrap: anywhere;
   transition: color 0.15s;
 }
-.blog-item a:hover h2 {
+.blog-card > a:hover h2 {
   color: var(--post-amber);
 }
-.blog-item p.excerpt {
-  margin: 12px 0 0;
-  font-size: 16px;
+.blog-card-excerpt {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--post-body);
-  text-wrap: pretty;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
-.blog-item img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  background: #e9e6dd;
+.blog-card-meta {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--post-line);
+  font-size: 13px;
+  color: var(--post-muted);
+}
+/* Artigo mais recente em destaque, com a imagem ao lado do texto */
+@media (min-width: 860px) {
+  .blog-card-featured {
+    grid-column: 1 / -1;
+  }
+  .blog-card-featured > a {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+  }
+  .blog-card-featured .blog-card-media {
+    aspect-ratio: auto;
+    min-height: 380px;
+  }
+  .blog-card-featured .blog-card-body {
+    justify-content: center;
+    padding: 40px;
+  }
+  .blog-card-featured h2 {
+    font-size: 36px;
+    line-height: 1.12;
+  }
+  .blog-card-featured .blog-card-excerpt {
+    font-size: 17px;
+    -webkit-line-clamp: 4;
+  }
+  .blog-card-featured .blog-card-meta {
+    margin-top: 12px;
+  }
 }
 .blog-empty {
   padding: 48px 0;

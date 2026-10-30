@@ -30,6 +30,7 @@ import {
   slugifyTyping,
 } from "@/lib/blog/content";
 import type { BodyEditorHandle } from "./BodyEditor";
+import { CoverField } from "./CoverField";
 
 // Só no navegador: o editor gera chaves aleatórias, que não bateriam com as do servidor
 const BodyEditor = dynamic(() => import("./BodyEditor").then((mod) => mod.BodyEditor), {
@@ -39,7 +40,7 @@ const BodyEditor = dynamic(() => import("./BodyEditor").then((mod) => mod.BodyEd
 
 const AUTOSAVE_MS = 800;
 // Campos com controle próprio nesta tela
-const CUSTOM_FIELDS = new Set(["title", "slug", "body", "author", "category", "publishedAt"]);
+const CUSTOM_FIELDS = new Set(["title", "slug", "body", "author", "category", "coverImage", "publishedAt"]);
 
 type SaveState = "idle" | "pending" | "saving" | "error";
 type ViewMode = "write" | "split" | "preview";
@@ -181,6 +182,12 @@ export function PostEditor({
     const { author: _previous, ...rest } = latest.current;
     void _previous;
     commit(id ? { ...rest, author: { _type: "reference", _ref: id, _weak: true } } : rest);
+  };
+
+  const setCover = (next: PostImage | undefined) => {
+    const { coverImage: _previous, ...rest } = latest.current;
+    void _previous;
+    commit(next ? { ...rest, coverImage: next } : rest);
   };
 
   const setCategory = (next: string) => {
@@ -350,6 +357,7 @@ export function PostEditor({
         {/* O editor continua montado nas outras abas: ele guarda histórico e seleção */}
         <div className={`min-w-0 ${showEditor ? "" : "hidden"}`}>
           <section className="pd-card min-w-0">
+            <CoverField value={values.coverImage as PostImage | undefined} onChange={setCover} />
             <div className="px-5 pb-4 pt-5 sm:px-7">
               <textarea
                 ref={titleInput}

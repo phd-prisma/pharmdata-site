@@ -48,23 +48,38 @@ export function BlogListing({
           ? <p className="blog-empty">Em breve, novos artigos por aqui.</p>
           : (
               <ul className="blog-list">
-                {posts.map((post) => {
-                  const cover = imageUrl(post.coverImage, 800, 450);
+                {posts.map((post, index) => {
+                  const cover = imageUrl(post.coverImage, 1200, 675);
                   return (
-                    <li key={post._id} className="blog-item">
+                    <li key={post._id} className={`blog-card ${index === 0 ? "blog-card-featured" : ""}`}>
                       <Link href={postPath(post.slug)}>
-                        <div>
-                          <p className="post-meta">
-                            {post.category && `${post.category} · `}
+                        <div className="blog-card-media">
+                          {cover
+                            ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={cover}
+                                  alt={post.coverImage?.alt ?? ""}
+                                  width={1200}
+                                  height={675}
+                                  loading={index === 0 ? "eager" : "lazy"}
+                                />
+                              )
+                            : (
+                                <div className="blog-card-fallback" aria-hidden>
+                                  <strong>{settings.brandName}</strong>
+                                  <span>{post.category || "Blog"}</span>
+                                </div>
+                              )}
+                        </div>
+                        <div className="blog-card-body">
+                          {post.category && <span className="blog-card-category">{post.category}</span>}
+                          <h2>{post.title}</h2>
+                          {post.excerpt && <p className="blog-card-excerpt">{post.excerpt}</p>}
+                          <p className="blog-card-meta">
                             {formatPostDate(post.publishedAt)} · {post.minutes} min de leitura
                           </p>
-                          <h2>{post.title}</h2>
-                          {post.excerpt && <p className="excerpt">{post.excerpt}</p>}
                         </div>
-                        {cover && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={cover} alt={post.coverImage?.alt ?? ""} width={800} height={450} loading="lazy" />
-                        )}
                       </Link>
                     </li>
                   );
