@@ -22,7 +22,7 @@ const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
 export default async function OverviewPage() {
-  const [{ team, partners }, session, visits] = await Promise.all([
+  const [{ team, partners, posts }, session, visits] = await Promise.all([
     getOverview(),
     requireSession(),
     // Sem analytics (ou com o Umami fora do ar) a visão geral continua funcionando
@@ -55,6 +55,12 @@ export default async function OverviewPage() {
       title: "Parceiros / Clientes",
       text: plural(partners, "empresa", "empresas"),
     },
+    {
+      href: `${ADMIN_BASE}/blog`,
+      kicker: "Coleção",
+      title: "Blog",
+      text: plural(posts, "artigo publicado", "artigos publicados"),
+    },
   ];
 
   return (
@@ -62,7 +68,7 @@ export default async function OverviewPage() {
       <p className="text-sm text-(--a-muted)">{greeting()}, {firstName}</p>
       <h1 className="mt-1 text-[28px] font-semibold tracking-tight">Conteúdo do site</h1>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {cards.map((card) => (
           <Link
             key={card.href}

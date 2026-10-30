@@ -12,6 +12,7 @@ import { Clients } from "@/components/sections/Clients";
 import { Contact } from "@/components/sections/Contact";
 import { Faq } from "@/components/sections/Faq";
 import { getHomeContent } from "@/lib/sanity/getHomeContent";
+import { hasPublishedPosts } from "@/lib/sanity/getPosts";
 import { buildStructuredData, serializeJsonLd } from "@/lib/seo/structuredData";
 
 // Renderiza a cada visita: o Amplify não persiste a revalidação (ISR) do Next 16,
@@ -45,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const content = await getHomeContent();
+  const [content, showBlog] = await Promise.all([getHomeContent(), hasPublishedPosts()]);
   const { settings, home, team, partners } = content;
 
   return (
@@ -54,7 +55,7 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildStructuredData(content)) }}
       />
-      <Header settings={settings} />
+      <Header settings={settings} showBlog={showBlog} />
       <main>
         <Hero content={home.hero} />
         <Stats stats={home.stats} />

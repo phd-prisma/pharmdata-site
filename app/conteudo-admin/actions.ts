@@ -9,6 +9,7 @@ import {
   discardDraft,
   patchEverywhere,
   publishDocument,
+  publishPost,
   reorderCollection,
   saveDraft,
   type CollectionType,
@@ -39,6 +40,12 @@ export async function publishAction(type: string, id: string) {
   await publishDocument(type, id);
   revalidatePath(ADMIN_BASE, "layout");
   return { publishedAt: new Date().toISOString() };
+}
+
+export async function publishPostAction(id: string) {
+  const result = await publishPost(id);
+  if (!result.error) revalidatePath(ADMIN_BASE, "layout");
+  return result;
 }
 
 export async function discardDraftAction(type: string, id: string) {

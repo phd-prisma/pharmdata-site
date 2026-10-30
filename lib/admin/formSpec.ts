@@ -6,6 +6,9 @@ import type { ArrayItemSpec, DocumentSpec, FieldSpec, FieldsetSpec } from "./typ
 const SOFT_LIMITS: Record<string, number> = {
   "siteSettings.siteTitle": 60,
   "siteSettings.description": 160,
+  "post.excerpt": 160,
+  "post.seoTitle": 60,
+  "post.seoDescription": 160,
 };
 const EMPHASIS = new Set(["homePage.hero.title"]);
 

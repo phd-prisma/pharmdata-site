@@ -13,6 +13,9 @@
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@hookform/resolvers": "^5.9.1",
+    "@portabletext/editor": "^6.6.9",
+    "@portabletext/plugin-markdown-shortcuts": "^7.0.33",
+    "@portabletext/react": "^7.0.1",
     "@sanity/client": "^7.27.0",
     "@sanity/icons": "^3.8.0",
     "@sanity/image-url": "^2.1.1",

@@ -1,4 +1,4 @@
-import { createImageUrlBuilder } from "@sanity/image-url";
+import { createImageUrlBuilder, type SanityImageSource } from "@sanity/image-url";
 import { ADMIN_BASE } from "@/lib/admin/paths";
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "";
@@ -6,9 +6,14 @@ const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
 
 const builder = createImageUrlBuilder({ projectId, dataset });
 
-export function imageUrl(ref: string | undefined, width: number, height?: number) {
-  if (!ref) return undefined;
-  const image = builder.image(ref).width(width).auto("format");
+// Aceita a referência ou o objeto da imagem, que traz o recorte e o foco definidos no Studio
+export function imageUrl(
+  source: string | { asset?: { _ref: string } } | undefined,
+  width: number,
+  height?: number,
+) {
+  if (!source || (typeof source === "object" && !source.asset)) return undefined;
+  const image = builder.image(source as SanityImageSource).width(width).auto("format");
   return (height ? image.height(height).fit("crop") : image.fit("max")).url();
 }
 

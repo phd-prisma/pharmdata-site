@@ -1,3 +1,5 @@
+import { imageUrl } from "@/lib/admin/client-utils";
+import { postPath, type Post } from "@/lib/sanity/getPosts";
 import type { HomeContent } from "@/lib/sanity/types";
 
 // Dados estruturados (schema.org) da página inicial. Buscadores e assistentes
@@ -135,6 +137,32 @@ export function buildStructuredData({ settings, home, team }: HomeContent) {
   }
 
   return { "@context": "https://schema.org", "@graph": graph };
+}
+
+export function buildPostStructuredData(post: Post, brandName: string) {
+  const url = `${siteUrl}${postPath(post.slug)}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${url}#article`,
+    "mainEntityOfPage": url,
+    "headline": post.title,
+    "articleSection": post.category || undefined,
+    "description": post.seoDescription || post.excerpt || undefined,
+    "image": imageUrl(post.coverImage, 1200, 630) ?? `${siteUrl}/og`,
+    "datePublished": post.publishedAt,
+    "dateModified": post.updatedAt,
+    "inLanguage": "pt-BR",
+    "author": post.author?.name
+      ? {
+          "@type": "Person",
+          "name": post.author.name,
+          "jobTitle": post.author.role || undefined,
+          "sameAs": post.author.linkedinUrl ? [post.author.linkedinUrl] : undefined,
+        }
+      : { "@id": `${siteUrl}/#organization` },
+    "publisher": { "@type": "Organization", "@id": `${siteUrl}/#organization`, "name": brandName },
+  };
 }
 
 // JSON.stringify não escapa "<"; sem isso um texto do CMS poderia fechar o <script>

@@ -1,4 +1,5 @@
 import { getHomeContent } from "@/lib/sanity/getHomeContent";
+import { getPosts, postPath } from "@/lib/sanity/getPosts";
 import { siteUrl } from "@/lib/seo/structuredData";
 
 // Resumo do site em Markdown para assistentes de IA (padrão llms.txt),
@@ -6,7 +7,7 @@ import { siteUrl } from "@/lib/seo/structuredData";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { settings, home, team, partners } = await getHomeContent();
+  const [{ settings, home, team, partners }, posts] = await Promise.all([getHomeContent(), getPosts()]);
   const faq = home.faq.items.filter((item) => item.question && item.answer);
   const clients = partners.map((partner) => partner.name).filter(Boolean);
 
@@ -44,6 +45,7 @@ export async function GET() {
     "",
     clients.length === 0 ? null : `## Clientes e parceiros\n${clients.map((name) => `- ${name}`).join("\n")}\n`,
     faq.length === 0 ? null : `## Perguntas frequentes\n${faq.map((item) => `### ${item.question}\n${item.answer}`).join("\n\n")}\n`,
+    posts.length === 0 ? null : `## Artigos do blog\n${posts.map((post) => `- [${post.title}](${siteUrl}${postPath(post.slug)})${post.excerpt ? `: ${post.excerpt}` : ""}`).join("\n")}\n`,
     "## Contato",
     `${home.contact.lead} Formulário: ${siteUrl}/#contato`,
   ];

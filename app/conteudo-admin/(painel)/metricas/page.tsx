@@ -35,6 +35,9 @@ export default async function AnalyticsPage({
         <div>
           <p className="text-xs text-(--a-muted)">Analytics</p>
           <h1 className="mt-1 text-[28px] font-semibold tracking-tight">Métricas do site</h1>
+          <Link href={`${ADMIN_BASE}/blog/metricas?periodo=${period}`} className="mt-1 inline-block text-sm text-(--a-teal-2) hover:underline">
+            Ver métricas do blog →
+          </Link>
           {data && (
             <p className="mt-1 flex items-center gap-2 text-sm text-(--a-muted)">
               <span className={`size-2 rounded-full ${data.activeNow ? "bg-(--a-ok)" : "bg-(--a-line-2)"}`} />

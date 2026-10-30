@@ -1,8 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { createClient, type SanityDocument } from "@sanity/client";
+import { isValidSlug, plainText } from "@/lib/blog/content";
 import { requireSession } from "./session";
-import type { CollectionItem, DocStatus, EditableDocument } from "./types";
+import type { CollectionItem, DocStatus, EditableDocument, PostListItem } from "./types";
 
 // Cada pessoa edita com o próprio token do Sanity (guardado na sessão),
 // então valem as permissões e o histórico de cada usuário
@@ -21,6 +22,7 @@ async function userClient() {
 export const COLLECTIONS = {
   teamMember: { slug: "equipe", subtitleField: "role", imageField: "photo" },
   partner: { slug: "parceiros", subtitleField: "kind", imageField: "logo" },
+  post: { slug: "blog", subtitleField: "excerpt", imageField: "coverImage" },
 } as const;
 export type CollectionType = keyof typeof COLLECTIONS;
 
@@ -58,7 +60,7 @@ export async function getEditableDocument(
   return {
     id,
     type,
-    status: draft ? "draft" : published ? "published" : "new",
+    status: published ? (draft ? "draft" : "published") : "new",
     updatedAt: current?._updatedAt,
     values: current ? stripSystem(current) : {},
   };
@@ -88,6 +90,37 @@ export async function publishDocument(type: string, id: string) {
     .createOrReplace({ ...stripSystem(draft), _id: id, _type: type })
     .delete(draftId(id))
     .commit();
+}
+
+// Publica um artigo depois de conferir o que o site precisa para exibi-lo.
+// Devolve o problema em vez de lançar: erros de Server Action não chegam à tela em produção
+export async function publishPost(id: string): Promise<{ error?: string }> {
+  const client = await userClient();
+  const draft = await client.getDocument(draftId(id));
+  if (!draft) return {};
+
+  const slug = (draft.slug as { current?: string } | undefined)?.current;
+  if (!(draft.title as string | undefined)?.trim()) return { error: "Dê um título ao artigo." };
+  if (!isValidSlug(slug)) return { error: "O endereço do artigo está vazio ou inválido." };
+  if (!plainText(draft.body as never).trim()) return { error: "Escreva o texto do artigo." };
+
+  const taken = await client.fetch<boolean>(
+    `count(*[_type == "post" && slug.current == $slug && !(_id in path("drafts.**")) && _id != $id]) > 0`,
+    { slug, id },
+  );
+  if (taken) return { error: `Já existe um artigo publicado no endereço “${slug}”.` };
+
+  await client
+    .transaction()
+    .createOrReplace({
+      ...stripSystem(draft),
+      publishedAt: draft.publishedAt ?? new Date().toISOString(),
+      _id: id,
+      _type: "post",
+    })
+    .delete(draftId(id))
+    .commit();
+  return {};
 }
 
 export async function discardDraft(type: string, id: string) {
@@ -193,11 +226,52 @@ export async function listCollection(type: CollectionType): Promise<CollectionIt
     });
 }
 
+// Mais recentes primeiro; o rascunho tem prioridade no que é exibido
+export async function listPosts(): Promise<PostListItem[]> {
+  const docs = await (await userClient()).fetch<
+    {
+      _id: string;
+      title?: string;
+      slug?: string;
+      excerpt?: string;
+      category?: string;
+      imageRef?: string;
+      publishedAt?: string;
+      _updatedAt: string;
+    }[]
+  >(
+    `*[_type == "post"]{ _id, title, "slug": slug.current, excerpt, category, "imageRef": coverImage.asset._ref, publishedAt, _updatedAt }`,
+  );
+
+  const publishedIds = new Set(
+    docs.filter((doc) => !doc._id.startsWith("drafts.")).map((doc) => doc._id),
+  );
+  const byId = new Map<string, PostListItem>();
+  for (const doc of docs) {
+    const id = publishedId(doc._id);
+    const isDraft = doc._id !== id;
+    if (byId.has(id) && !isDraft) continue;
+    byId.set(id, {
+      id,
+      title: doc.title ?? "",
+      slug: doc.slug,
+      excerpt: doc.excerpt,
+      category: doc.category,
+      imageRef: doc.imageRef,
+      publishedAt: doc.publishedAt,
+      updatedAt: doc._updatedAt,
+      status: !isDraft ? "published" : publishedIds.has(id) ? "draft" : "new",
+    });
+  }
+  return [...byId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 export async function getOverview() {
-  const counts = await (await userClient()).fetch<{ team: number; partners: number }>(
+  const counts = await (await userClient()).fetch<{ team: number; partners: number; posts: number }>(
     `{
       "team": count(*[_type == "teamMember" && !(_id in path("drafts.**"))]),
-      "partners": count(*[_type == "partner" && !(_id in path("drafts.**"))])
+      "partners": count(*[_type == "partner" && !(_id in path("drafts.**"))]),
+      "posts": count(*[_type == "post" && !(_id in path("drafts.**"))])
     }`,
   );
   return counts;

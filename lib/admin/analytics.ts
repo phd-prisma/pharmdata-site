@@ -1,4 +1,5 @@
 import "server-only";
+import { BLOG_CTA_EVENT, BLOG_PATH, BLOG_READ_EVENT } from "@/lib/blog/content";
 
 // Dados do Umami self-hosted para o painel. Usa um usuário somente leitura
 // (UMAMI_API_USERNAME/PASSWORD): as credenciais nunca chegam ao navegador.
@@ -236,6 +237,9 @@ const EVENTS: Record<string, string> = {
   "cta-cabecalho": "Clique no botão do cabeçalho",
   "cta-hero-agendar": "Clique em “Agende uma conversa”",
   "cta-hero-como-funciona": "Clique em “Como funciona”",
+  "nav-blog": "Clique em “Blog” no menu",
+  [BLOG_READ_EVENT]: "Artigo lido até o fim",
+  [BLOG_CTA_EVENT]: "Clique no botão ao final do artigo",
 };
 
 const countryNames = new Intl.DisplayNames(["pt-BR"], { type: "region" });
@@ -486,5 +490,183 @@ export async function getVisitor(id: string) {
         label: item.eventType === 2 ? EVENTS[item.eventName ?? ""] ?? item.eventName ?? "Evento" : item.urlPath || "/",
         referrer: item.referrerDomain ?? undefined,
       })),
+  };
+}
+
+export interface BlogPostRow {
+  path: string;
+  title: string;
+  id?: string;
+  pageviews: number;
+  visitors: number;
+  // Ausentes nos artigos além do limite de consultas detalhadas
+  reads?: number;
+  averageTime?: number;
+}
+
+export interface BlogAnalytics {
+  period: Period;
+  current: Stats;
+  previous: Stats;
+  days: DayPoint[];
+  posts: BlogPostRow[];
+  reads: number;
+  ctaClicks: number;
+  channels: Metric[];
+  aiAssistants: Metric[];
+  referrers: Metric[];
+  entries: Metric[];
+  countries: Metric[];
+  regions: Metric[];
+  cities: Metric[];
+  devices: Metric[];
+  systems: Metric[];
+  browsers: Metric[];
+}
+
+// Cada artigo no detalhe custa duas consultas ao Umami
+const BLOG_DETAIL_LIMIT = 30;
+
+// O Umami guarda o caminho como veio: "/blog/x#titulo" e "/blog/x/" são o mesmo artigo
+const cleanPath = (path: string) => path.split("#")[0].replace(/(.)\/$/, "$1");
+
+function periodRange(cfg: NonNullable<ReturnType<typeof config>>, days: number) {
+  const now = Date.now();
+  const startOfToday = Math.floor((now - SP_OFFSET) / DAY) * DAY + SP_OFFSET;
+  return { startAt: startOfToday - (days - 1) * DAY, endAt: now, hostname: `c.${cfg.hostname}` };
+}
+
+// Visitas por caminho dentro do blog. Valores somados entre variações do mesmo caminho
+async function blogPathMetrics(
+  cfg: NonNullable<ReturnType<typeof config>>,
+  range: ReturnType<typeof periodRange>,
+) {
+  const rows = await umami<{ name: string; pageviews: number | string; visitors: number | string }[]>(
+    cfg,
+    "/metrics/expanded",
+    { ...range, path: `c.${BLOG_PATH}`, type: "path", limit: 500 },
+  );
+  const byPath = new Map<string, { pageviews: number; visitors: number }>();
+  for (const row of rows) {
+    const path = cleanPath(row.name);
+    if (!path.startsWith(`${BLOG_PATH}/`)) continue;
+    const seen = byPath.get(path) ?? { pageviews: 0, visitors: 0 };
+    seen.pageviews += Number(row.pageviews);
+    seen.visitors += Number(row.visitors);
+    byPath.set(path, seen);
+  }
+  return byPath;
+}
+
+// Resumo leve para a lista de artigos do painel: visitantes em 30 dias, por caminho
+export async function getPostViews() {
+  const cfg = config();
+  if (!cfg) return null;
+  const byPath = await blogPathMetrics(cfg, periodRange(cfg, PERIODS["30d"].days));
+  return Object.fromEntries(byPath);
+}
+
+export async function getBlogAnalytics(
+  period: Period,
+  published: { id: string; title: string; slug?: string }[],
+): Promise<BlogAnalytics | null> {
+  const cfg = config();
+  if (!cfg) return null;
+
+  const days = PERIODS[period].days;
+  const baseRange = periodRange(cfg, days);
+  const range = { ...baseRange, path: `c.${BLOG_PATH}` };
+  const metric = (type: string, limit = 8) =>
+    umami<{ x: string; y: number; country?: string }[]>(cfg, "/metrics", { ...range, type, limit });
+
+  const [
+    stats, series, byPath, referrers, utmSources, channels, entries,
+    countries, regions, cities, devices, systems, browsers, events,
+  ] = await Promise.all([
+    umami<Stats & { comparison: Stats }>(cfg, "/stats", range),
+    umami<{ pageviews: { x: string; y: number }[]; sessions: { x: string; y: number }[] }>(
+      cfg,
+      "/pageviews",
+      { ...range, unit: "day", timezone: TIMEZONE },
+    ),
+    blogPathMetrics(cfg, baseRange),
+    metric("referrer", 500),
+    metric("utmSource", 500),
+    metric("channel"),
+    metric("entry"),
+    metric("country"),
+    metric("region"),
+    metric("city"),
+    metric("device"),
+    metric("os"),
+    metric("browser"),
+    metric("event", 20),
+  ]);
+
+  // Artigos publicados entram mesmo sem visita; caminhos sem artigo (excluído ou
+  // com endereço trocado) continuam na lista, para o histórico não sumir
+  const known = new Map(
+    published.filter((post) => post.slug).map((post) => [`${BLOG_PATH}/${post.slug}`, post]),
+  );
+  const rows = [...new Set([...byPath.keys(), ...known.keys()])]
+    .map((path) => ({
+      path,
+      title: known.get(path)?.title || path,
+      id: known.get(path)?.id,
+      pageviews: byPath.get(path)?.pageviews ?? 0,
+      visitors: byPath.get(path)?.visitors ?? 0,
+    }))
+    .sort((a, b) => b.pageviews - a.pageviews);
+
+  // O total de tempo por caminho vem zerado em /metrics/expanded; só /stats traz o valor
+  const posts: BlogPostRow[] = await Promise.all(
+    rows.map(async (row, index) => {
+      if (index >= BLOG_DETAIL_LIMIT || row.pageviews === 0) {
+        return index >= BLOG_DETAIL_LIMIT ? row : { ...row, reads: 0, averageTime: 0 };
+      }
+      const filter = { ...baseRange, path: `eq.${row.path}` };
+      const [detail, rowEvents] = await Promise.all([
+        umami<Stats>(cfg, "/stats", filter),
+        umami<{ x: string; y: number }[]>(cfg, "/metrics", { ...filter, type: "event", limit: 20 }),
+      ]);
+      return {
+        ...row,
+        reads: rowEvents.find((event) => event.x === BLOG_READ_EVENT)?.y ?? 0,
+        averageTime: detail.visits ? detail.totaltime / detail.visits : 0,
+      };
+    }),
+  );
+
+  const byDay = (points: { x: string; y: number }[]) =>
+    new Map(points.map((point) => [point.x.slice(0, 10), point.y]));
+  const views = byDay(series.pageviews);
+  const sessions = byDay(series.sessions);
+  const toMetrics = (
+    list: { x: string; y: number; country?: string }[],
+    name: (x: string, country?: string) => string,
+  ) => list.map((row) => ({ label: name(row.x, row.country), value: row.y }));
+  const { comparison, ...current } = stats;
+
+  return {
+    period,
+    current,
+    previous: comparison,
+    days: Array.from({ length: days }, (_, index) => {
+      const date = spDate(baseRange.startAt + index * DAY);
+      return { date, visitors: sessions.get(date) ?? 0, pageviews: views.get(date) ?? 0 };
+    }),
+    posts,
+    reads: events.find((row) => row.x === BLOG_READ_EVENT)?.y ?? 0,
+    ctaClicks: events.find((row) => row.x === BLOG_CTA_EVENT)?.y ?? 0,
+    channels: toMetrics(channels, (x) => CHANNELS[x] ?? x),
+    aiAssistants: aiAssistantMetrics(referrers, utmSources),
+    referrers: toMetrics(referrers.slice(0, 8), (x) => x || "Acesso direto"),
+    entries: toMetrics(entries, (x) => x || "/"),
+    countries: toMetrics(countries, countryName),
+    regions: toMetrics(regions, regionName),
+    cities: toMetrics(cities, withCountry),
+    devices: toMetrics(devices, (x) => DEVICES[x] ?? x),
+    systems: toMetrics(systems, (x) => x),
+    browsers: toMetrics(browsers, (x) => BROWSERS[x] ?? x),
   };
 }

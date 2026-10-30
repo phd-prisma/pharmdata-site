@@ -69,6 +69,18 @@ export interface EditableDocument {
   values: Record<string, unknown>;
 }
 
+export interface PostListItem {
+  id: string;
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  category?: string;
+  imageRef?: string;
+  publishedAt?: string;
+  updatedAt: string;
+  status: DocStatus;
+}
+
 export interface CollectionItem {
   id: string;
   title: string;

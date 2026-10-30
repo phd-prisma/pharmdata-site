@@ -1,4 +1,4 @@
-import { CaseIcon, CogIcon, HomeIcon, UsersIcon } from "@sanity/icons";
+import { CaseIcon, CogIcon, DocumentTextIcon, HomeIcon, UsersIcon } from "@sanity/icons";
 import type { StructureResolver } from "sanity/structure";
 
 const byDisplayOrder = [
@@ -50,5 +50,15 @@ export const structure: StructureResolver = (S) =>
           S.documentTypeList("partner")
             .title("Parceiros / Clientes")
             .defaultOrdering(byDisplayOrder),
+        ),
+      S.listItem()
+        .title("Blog")
+        .id("post")
+        .icon(DocumentTextIcon)
+        .schemaType("post")
+        .child(
+          S.documentTypeList("post")
+            .title("Blog")
+            .defaultOrdering([{ field: "publishedAt", direction: "desc" }]),
         ),
     ]);
